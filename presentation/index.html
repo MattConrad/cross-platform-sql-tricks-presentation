@@ -324,66 +324,6 @@ Id          Value
             <p class="fragment">Omitted for time and complexity: EXISTS/NOT EXISTS, and correlated subqueries. Correlated subqueries are very cool! If you work with SQL routinely, look them up.</p>
         </section>
 
-<!--
-        <section>
-            <h3>SUBQUERIES (NOT IN gotchas)</h3>
-            <div>
-              <div class="code_67">
-                <pre class="fragment"><code>
-create table test_d
-(Id int NULL,
-Value varchar(100) NOT NULL);
-
-insert into test_d
-(Id, Value)
-select Id, Value
-from test_b
-where Id > 10
-
-insert into test_d
-(Id, Value)
-values
-(null, 'what?')
-
-select * 
-from test_b 
-where Id not in
-	(select Id from test_d)
-                </code></pre>
-              </div>
-              <div class="code_33">
-                <pre class="fragment"><code>
-Id          Value
------------ ----------
-
-(0 row(s) affected)
-                </code></pre>
-              </div>
-            </div>
-
-            <div>
-              <div class="code_67">
-                <pre class="fragment"><code>
-select * 
-from test_b 
-where Id not in
-	(select Id from test_d where Id is not null)
-                </code></pre>
-              </div>
-              <div class="code_33">
-                <pre class="fragment"><code>
-Id          Value
------------ ----------
-1           a
-2           b
-3           c
-4           d
-                </code></pre>
-              </div>
-            </div>
-        </section>
--->
-
         <section>
             <h3>Setup (part 2)</h3>
             <p>For the next part we want a numbers table with numbers from 1 to 100. The easiest way to do this varies by platform.</p>
@@ -632,7 +572,7 @@ count_of_all sum_of_all  count_of_evens sum_of_evens
             <p>Questions?</p>
             <br />
             <small>
-              <p>You can download a copy of this presentation, including the all the SQL code, at [MWCTODO].</p>
+              <p>You can download a copy of this presentation, including the all the SQL code, at <br /><a href="https://github.com/MattConrad/cross-platform-sql-tricks-presentation">https://github.com/MattConrad/cross-platform-sql-tricks-presentation</a>.</p>
               <p>Feel free to contact me with questions, comments, or LOLcats pictures at <br /><strong>mattconrad@gmail.com</strong> or <strong>matt@wichitaprogrammer.com</strong>.</p>
               <p>This presentation was written using the DevICT presentation template available at <br /><a href="https://github.com/devict/devict-presentation-template">https://github.com/devict/devict-presentation-template</a>. Thanks Seth!</p>
             </small>

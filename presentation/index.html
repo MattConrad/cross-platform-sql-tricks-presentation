@@ -1,0 +1,678 @@
+<!doctype html>
+<html lang="en">
+
+  <head>
+    <meta charset="utf-8">
+
+    <title>Cross Platform SQL Tricks</title>
+
+    <meta name="description" content="Cross Platform SQL Tricks">
+    <meta name="author" content="Cross Platform SQL Tricks">
+
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <link rel="stylesheet" href="lib/reveal.js/css/reveal.min.css">
+    <link rel="stylesheet" href="lib/reveal.js/css/theme/beige.css" id="theme">
+
+    <!-- For syntax highlighting -->
+    <link rel="stylesheet" href="lib/reveal.js/lib/css/zenburn.css">
+
+    <link rel="stylesheet" href="css/devict.css">
+    <link rel="stylesheet" href="css/custom.css">
+
+    <!-- If the query includes 'print-pdf', use the PDF print sheet -->
+    <script>
+      document.write( '<link rel="stylesheet" href="lib/reveal.js/css/print/' + ( window.location.search.match( /print-pdf/gi ) ? 'pdf' : 'paper' ) + '.css" type="text/css" media="print">' );
+    </script>
+
+    <!--[if lt IE 9]>
+    <script src="lib/js/html5shiv.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="reveal">
+      <!-- Any section element inside of this container is displayed as a slide -->
+      <div class="slides">
+        <!-- A markdown document can provide part of or the the entire presentation -->
+        <!-- With this setup three blank links separate slides. Two blanks separate nested "vertical" slides -->
+        
+        <section data-markdown>
+            <script type="text/template">
+# Cross Platform SQL Tricks
+By Matt Conrad
+
+![DevICT](/img/devict-logo.png)
+            </script>
+        </section>
+
+        <section>
+            <p>Tonight's quick talk is targeted to those of who occasionally have to interact with SQL through a query window, but don't enjoy it much, find it confusing or cumbersome.</p>
+            <p class="fragment">There's a number of things you can do with SQL which are fairly easy to understand, well supported between different database engines, and handy in common situations. Maybe a couple of these can ease some pain later on.</p>
+            <ul class="fragment">
+              <li>INSERT ... SELECT</li>
+              <li>SELECT INTO/CREATE TABLE AS ... SELECT</li>
+              <li>UNION and UNION ALL</li>
+              <li>Subqueries using IN</li>
+              <li>Derived Tables</li>
+              <li>CASE statements</li>
+            </ul>
+        </section>
+        
+        <section>
+            <p><em>Some of you may not have worked with SQL at all. We're not going over basics like SELECT/FROM/WHERE or INSERT/UPDATE/DELETE here. We also aren't going over basic JOIN operations (I waffled on this one).</em></p>
+            <p><em>If there's interest, we could do an <strong>Intro To SQL</strong> presentation another day. Drop me a note if you'd like to see this.</em></p>
+        </section>
+        
+        <section>
+            <h3>Setup (part 1)</h3>
+            <p>This is sample data we'll use in the later examples. The pane on the right shows our first test table.</p>
+            <div>
+              <div class="code_67">
+                <pre class="fragment"><code>
+create table test_a
+(Id int NOT NULL,
+Value varchar(100) NOT NULL);
+
+insert into test_a (Id, Value) values (1, 'a');
+insert into test_a (Id, Value) values (2, 'b');
+insert into test_a (Id, Value) values (3, 'c');
+insert into test_a (Id, Value) values (4, 'd');
+
+select * from test_a;
+                </code></pre>
+              </div>
+              <div class="code_33">
+                <pre class="fragment"><code>
+Id          Value
+----------- -----------
+1           a
+2           b
+3           c
+4           d
+                </code></pre>
+              </div>
+            </div>
+        </section>
+
+        <section>
+            <h3>INSERT ... SELECT</h3>
+            <p>You can combine an INSERT statement with a SELECT statement to insert several rows at once.</p>
+            <div>
+              <div class="code_67">
+                <pre class="fragment"><code>
+create table test_b
+(Id int NOT NULL,
+Value varchar(100) NOT NULL);
+
+insert into test_b
+(Id, Value)
+select Id, Value
+from test_a
+
+select * from test_b
+                </code></pre>
+              </div>
+              <div class="code_33">
+                <pre class="fragment"><code>
+Id          Value
+----------- -----------
+1           a
+2           b
+3           c
+4           d
+                </code></pre>
+              </div>
+            </div>
+        </section>
+
+        <section>
+            <h3>INSERT ... SELECT (contd)</h3>
+            <p>You can use expressions and clauses in your SELECT statement too.</p>
+            <div>
+              <div class="code_67">
+                <pre class="fragment"><code>
+--alas, concatenation is non-standard between SQL engines.
+-- SQL Server: “+”, PostgreSQL, “||”, MySQL, “CONCAT()”
+
+insert into test_b
+(Id, Value)
+select Id + 10, Value + cast(Id as varchar)  
+from test_a
+where Id > 2
+
+select * from test_b
+                </code></pre>
+              </div>
+              <div class="code_33">
+                <pre class="fragment"><code>
+Id          Value
+----------- ----------
+1           a
+2           b
+3           c
+4           d
+13          c3
+14          d4
+                </code></pre>
+              </div>
+            </div>
+        </section>
+
+        <section>
+            <h3>SELECT INTO<h3>
+            <h3>CREATE TABLE AS … SELECT</h3>
+            <p>You can also use a select statement to create a new table and populate it with data all at once. I often use this to create a temp table with the results of a complex query, which I can then do more work with in later steps.</p>
+            <div>
+              <div class="code_67">
+                <pre class="fragment"><code>
+--SQL Server, PostgreSQL
+select * 
+into test_c
+from test_a
+
+--MySQL, PostgreSQL
+create table test_c as 
+select *
+from test
+
+select * from test_c
+                </code></pre>
+              </div>
+              <div class="code_33">
+                <pre class="fragment"><code>
+Id          Value
+----------- ----------
+1           a
+2           b
+3           c
+4           d
+                </code></pre>
+              </div>
+            </div>
+        </section>
+
+        <section>
+            <h3>UNION</h3>
+            <p>UNION lets you combine two queries into a single result set.</p>
+            <div>
+              <div class="code_67">
+                <pre class="fragment"><code>
+select Id, Value from test_a
+union
+select Id, Value from test_b
+                </code></pre>
+              </div>
+              <div class="code_33">
+                <pre class="fragment"><code>
+Id          Value
+----------- -----------
+1           a
+2           b
+3           c
+3           c3
+4           d
+4           d4
+                </code></pre>
+              </div>
+            </div>
+            <p class="fragment">As you can see, duplicate values are automatically condensed into a single row. Often you don't want this.</p>
+        </section>
+
+        <section>
+            <h3>UNION ALL</h3>
+            <p>If you want to keep all the rows from both sets, use UNION ALL.</p>
+            <div>
+              <div class="code_67">
+                <pre class="fragment"><code>
+select Id, Value from test_a
+union all
+select Id, Value from test_b
+                </code></pre>
+              </div>
+              <div class="code_33">
+                <pre class="fragment"><code>
+Id          Value
+----------- ---------
+1           a
+2           b
+3           c
+4           d
+1           a
+2           b
+3           c
+4           d
+3           c3
+4           d4
+                </code></pre>
+              </div>
+            </div>
+            <p class="fragment">Note: when UNIONing tables, you need to have the same column listing in both the first and second parts, or you'll get an error.</p>
+        </section>
+
+        <section>
+            <h3>SUBQUERIES (using IN)</h3>
+            <p>You can nest queries, too. These are called subqueries. A simple and common subquery selects a single field with the IN operator.</p>
+            <div>
+              <div class="code_67">
+                <pre class="fragment"><code>
+--this is just a reminder of what's in test_b
+select * 
+from test_b
+                </code></pre>
+              </div>
+              <div class="code_33">
+                <pre class="fragment"><code>
+Id          Value
+----------- -----------
+1           a
+2           b
+3           c
+4           d
+13          c3
+14          d4
+                </code></pre>
+              </div>
+            </div>
+            <div>
+              <div class="code_67">
+                <pre class="fragment"><code>
+select * 
+from test_b
+where Id in 
+	(select Id from test_a)
+                </code></pre>
+              </div>
+              <div class="code_33">
+                <pre class="fragment"><code>
+Id          Value
+----------- -----------
+1           a
+2           b
+3           c
+4           d
+                </code></pre>
+              </div>
+            </div>
+        </section>
+
+        <section>
+            <h3>SUBQUERIES (using NOT IN)</h3>
+            <p>You can use NOT IN, too.</p>
+            <div>
+              <div class="code_67">
+                <pre class="fragment"><code>
+select * 
+from test_b
+where Id not in 
+	(select Id from test_a)
+                </code></pre>
+              </div>
+              <div class="code_33">
+                <pre class="fragment"><code>
+Id          Value
+----------- -----------
+13          c3
+14          d4
+                </code></pre>
+              </div>
+            </div>
+            <p class="fragment">Subqueries can be a little dangerous. Depending on what you’re doing, you may put a surprisingly heavy load on your query processor--effectively running a new query for every row in your system.</p>
+            <p class="fragment">Usually a simple IN subquery is efficient, similar to a JOIN. NOT IN is more likely to perform poorly and yields surprising results if there are NULLs in the subquery.</p>
+            <p class="fragment">Omitted for time and complexity: EXISTS/NOT EXISTS, and correlated subqueries. Correlated subqueries are very cool! If you work with SQL routinely, look them up.</p>
+        </section>
+
+<!--
+        <section>
+            <h3>SUBQUERIES (NOT IN gotchas)</h3>
+            <div>
+              <div class="code_67">
+                <pre class="fragment"><code>
+create table test_d
+(Id int NULL,
+Value varchar(100) NOT NULL);
+
+insert into test_d
+(Id, Value)
+select Id, Value
+from test_b
+where Id > 10
+
+insert into test_d
+(Id, Value)
+values
+(null, 'what?')
+
+select * 
+from test_b 
+where Id not in
+	(select Id from test_d)
+                </code></pre>
+              </div>
+              <div class="code_33">
+                <pre class="fragment"><code>
+Id          Value
+----------- ----------
+
+(0 row(s) affected)
+                </code></pre>
+              </div>
+            </div>
+
+            <div>
+              <div class="code_67">
+                <pre class="fragment"><code>
+select * 
+from test_b 
+where Id not in
+	(select Id from test_d where Id is not null)
+                </code></pre>
+              </div>
+              <div class="code_33">
+                <pre class="fragment"><code>
+Id          Value
+----------- ----------
+1           a
+2           b
+3           c
+4           d
+                </code></pre>
+              </div>
+            </div>
+        </section>
+-->
+
+        <section>
+            <h3>Setup (part 2)</h3>
+            <p>For the next part we want a numbers table with numbers from 1 to 100. The easiest way to do this varies by platform.</p>
+            <div>
+              <div class="code_67">
+                <pre class="fragment"><code>
+--SQL Server
+select number as n
+into ints
+from master..spt_values 
+where name is null and number >= 1 and number <=100
+
+--PostgreSQL
+select generate_series as n
+into ints
+from generate_series(1,100)
+
+--MySQL
+create table ints (n int NOT NULL);
+
+insert into ints
+(n)
+select
+  @i := @i + 1 as n
+from
+  (select 0 union all select 1 union all select 2 union all 
+   select 3 union all select 4 union all select 5 union all 
+   select 6 union all select 7 union all select 8 union all select 9) as t0,
+  (select 0 union all select 1 union all select 2 union all 
+   select 3 union all select 4 union all select 5 union all 
+   select 6 union all select 7 union all select 8 union all select 9) as t1,
+  (select @i:=0) as t_init;
+
+
+select * from ints
+                </code></pre>
+              </div>
+              <div class="code_33">
+                <pre class="fragment"><code>
+n
+-----------
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+...
+                </code></pre>
+              </div>
+            </div>
+        </section>
+
+        <section>
+            <h3>Derived Tables</h3>
+            <p>When writing a query that uses JOINs, you can use a SELECT statement as if it were a table and join against it. It’s a bit like making a one-off view.</p>
+            <div>
+              <div class="code_67">
+                <pre class="fragment"><code>
+select i1.n, i2.n as even, i3.n as mod3
+from ints as i1
+left join
+	(select n
+	from ints
+	where n % 2 = 0
+	) as i2
+on i1.n = i2.n
+left join
+	(select n
+	from ints
+	where n % 3 = 0
+	) as i3
+on i1.n = i3.n
+                </code></pre>
+              </div>
+              <div class="code_33">
+                <pre class="fragment"><code>
+n           even        mod3
+----------- ----------- -----------
+1           NULL        NULL
+2           2           NULL
+3           NULL        3
+4           4           NULL
+5           NULL        NULL
+6           6           6
+7           NULL        NULL
+8           8           NULL
+9           NULL        9
+10          10          NULL
+                </code></pre>
+              </div>
+            </div>
+        </section>
+
+        <section>
+            <h3>CASE statements</h3>
+            <p>CASE statements allow you to put conditional logic into your SQL clauses, using a syntax similar to the switch/case statement you see in various imperative languages. Here’s a FizzBuzz example over the “ints”  table.</p>
+            <div>
+              <div class="code_67">
+                <pre class="fragment"><code>
+--MySQL doesn’t need the cast . . .
+
+select n,
+	case
+		when n % 3 = 0 and n % 5 = 0 then 'FizzBuzz'
+		when n % 3 = 0 then 'Fizz'
+		when n % 5 = 0 then 'Buzz'
+		else cast(n as varchar)
+	end as FizzBuzz
+from ints
+                </code></pre>
+              </div>
+              <div class="code_33">
+                <pre class="fragment"><code>
+n           FizzBuzz
+----------- ------------
+1           1
+2           2
+3           Fizz
+4           4
+5           Buzz
+6           Fizz
+7           7
+8           8
+9           Fizz
+10          Buzz
+11          11
+12          Fizz
+13          13
+14          14
+15          FizzBuzz
+16          16
+...
+                </code></pre>
+              </div>
+            </div>
+        </section>
+
+        <section>
+            <h3>CASE statements (contd)</h3>
+            <p>If you spend any time working with SQL, learn how to use CASE. You can nest CASE expressions . . . </p>
+            <div>
+              <div class="code_67">
+                <pre class="fragment"><code>
+select n,
+	case
+		when n % 3 = 0 then
+			case
+				when n % 5 = 0 then 'FizzBuzz'
+				else 'Fizz'
+			end
+		when n % 5 = 0 then 'Buzz'
+		else cast(n as varchar)
+	end as FizzBuzz
+from ints
+                </code></pre>
+              </div>
+              <div class="code_33">
+                <pre class="fragment"><code>
+n           FizzBuzz
+----------- ----------
+1           1
+2           2
+3           Fizz
+4           4
+5           Buzz
+...
+                </code></pre>
+              </div>
+            </div>
+        </section>
+
+        <section>
+            <h3>CASE statements (contd)</h3>
+            <p>. . . you can use CASE expressions with ORDER BY (this can be extremely handy when writing reports) . . .</p>
+            <div>
+              <div class="code_67">
+                <pre class="fragment"><code>
+select n
+from ints
+where n <= 30
+order by 
+	case 
+		when n % 10 = 0 then 0
+		else 1
+	end,
+	n
+                </code></pre>
+              </div>
+              <div class="code_33">
+                <pre class="fragment"><code>
+n
+-----------
+10
+20
+30
+1
+2
+3
+4
+5
+6
+7
+8
+9
+11
+12
+...
+                </code></pre>
+              </div>
+            </div>
+        </section>
+
+        <section>
+            <h3>CASE statements (contd)</h3>
+            <p>. . . you can integrate CASE with aggregations. Again, I like this when writing reports. I commonly need to aggregate the same data a few different ways, and CASE can sometimes keep it all in one query.</p>
+            <div>
+              <div class="code_67">
+                <pre class="fragment"><code>
+--uses SUM() with CASE 1/0 to get modified count.
+select count(n) as count_of_all,
+	sum(n) as sum_of_all,
+	sum(case when n % 2 = 0 then 1 else 0 end) as count_of_evens,
+	sum(case when n % 2 = 0 then n else 0 end) as sum_of_evens
+from ints
+where n <= 100
+                </code></pre>
+              </div>
+              <div class="code_33">
+                <pre class="fragment"><code>
+count_of_all sum_of_all  count_of_evens sum_of_evens
+------------ ----------- -------------- ------------
+100          5050        50             2550
+                </code></pre>
+              </div>
+            </div>
+        </section>
+
+
+        <section>
+            <h3>The End</h3>
+            <p>Questions?</p>
+            <br />
+            <small>
+              <p>You can download a copy of this presentation, including the all the SQL code, at [MWCTODO].</p>
+              <p>Feel free to contact me with questions, comments, or LOLcats pictures at <br /><strong>mattconrad@gmail.com</strong> or <strong>matt@wichitaprogrammer.com</strong>.</p>
+              <p>This presentation was written using the DevICT presentation template available at <br /><a href="https://github.com/devict/devict-presentation-template">https://github.com/devict/devict-presentation-template</a>. Thanks Seth!</p>
+            </small>
+        </section>
+
+
+      </div>
+    </div>
+
+    <script src="lib/reveal.js/lib/js/head.min.js"></script>
+    <script src="lib/reveal.js/js/reveal.min.js"></script>
+
+    <script>
+
+      // Full list of configuration options available here:
+      // https://github.com/hakimel/reveal.js#configuration
+      Reveal.initialize({
+        controls: true,
+        progress: true,
+        history: true,
+        center: true,
+
+        //this is, unfortunately, important.
+        width: 1080,
+
+        theme: Reveal.getQueryHash().theme, // available themes are in /css/theme
+        transition: Reveal.getQueryHash().transition || 'default', // default/cube/page/concave/zoom/linear/fade/none
+
+        // Optional libraries used to extend on reveal.js
+        dependencies: [
+          { src: 'lib/reveal.js/lib/js/classList.js', condition: function() { return !document.body.classList; } },
+          { src: 'lib/reveal.js/plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+          { src: 'lib/reveal.js/plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+          { src: 'lib/reveal.js/plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+          { src: 'lib/reveal.js/plugin/zoom-js/zoom.js', async: true, condition: function() { return !!document.body.classList; } },
+          { src: 'lib/reveal.js/plugin/notes/notes.js', async: true, condition: function() { return !!document.body.classList; } }
+        ]
+      });
+
+    </script>
+
+  </body>
+</html>

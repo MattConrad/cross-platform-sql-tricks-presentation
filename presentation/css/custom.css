@@ -1,0 +1,17 @@
+div.code_67, div.code_50, div.code_33 {
+  float: left;
+  font-size: smaller;
+  margin: 5px;
+}
+
+div.code_67 {
+  width: 66%;
+}
+
+div.code_50 {
+  width: 49%;
+}
+
+div.code_33 {
+  width: 32%;
+}

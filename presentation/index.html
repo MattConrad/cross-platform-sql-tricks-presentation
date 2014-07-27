@@ -49,8 +49,12 @@ By Matt Conrad
         </section>
 
         <section>
-            <p>Tonight's quick talk is targeted to those of who occasionally have to interact with SQL through a query window, but don't enjoy it much, find it confusing or cumbersome.</p>
-            <p class="fragment">There's a number of things you can do with SQL which are fairly easy to understand, well supported between different database engines, and handy in common situations. Maybe a couple of these can ease some pain later on.</p>
+            <p>Who this is for:</p>
+            <ul class="fragment">
+              <li>You sometimes have to use raw SQL</li>
+              <li>You find SQL frustrating/confusing/obscure</li>
+            </ul>
+            <p class="fragment"><br />Overview of presentation:</p>
             <ul class="fragment">
               <li>INSERT ... SELECT</li>
               <li>SELECT INTO/CREATE TABLE AS ... SELECT</li>
@@ -62,13 +66,15 @@ By Matt Conrad
         </section>
         
         <section>
-            <p><em>Some of you may not have worked with SQL at all. We're not going over basics like SELECT/FROM/WHERE or INSERT/UPDATE/DELETE here. We also aren't going over basic JOIN operations (I waffled on this one).</em></p>
-            <p><em>If there's interest, we could do an <strong>Intro To SQL</strong> presentation another day. Drop me a note if you'd like to see this.</em></p>
+            <p><em>I'm assuming most people know SQL basics already<br />(SELECT/FROM/WHERE, INSERT/UPDATE/DELETE, JOIN).</em></p>
+            <p><em><br />If this isn't true, we could do an Intro to SQL talk sometime.</em></p>
+            <p><em><br />Email me if you're interested in an intro talk (contact info on final slide).</em></p>
         </section>
         
         <section>
             <h3>Setup (part 1)</h3>
-            <p>This is sample data we'll use in the later examples. The pane on the right shows our first test table.</p>
+            <p>Sample data for later examples.</p>
+            <p>Left pane shows setup and/or query, right pane shows results.</p>
             <div>
               <div class="code_67">
                 <pre class="fragment"><code>
@@ -99,7 +105,7 @@ Id          Value
 
         <section>
             <h3>INSERT ... SELECT</h3>
-            <p>You can combine an INSERT statement with a SELECT statement to insert several rows at once.</p>
+            <p>Combine an INSERT statement with a SELECT statement to insert several rows at once.</p>
             <div>
               <div class="code_67">
                 <pre class="fragment"><code>
@@ -126,11 +132,13 @@ Id          Value
                 </code></pre>
               </div>
             </div>
+            <div style="clear: both;"></div><!-- shouldn't need this . . . ? -->
+            <p class="fragment">More useful with 4000 rows than 4.</p>
         </section>
 
         <section>
             <h3>INSERT ... SELECT (contd)</h3>
-            <p>You can use expressions and clauses in your SELECT statement too.</p>
+            <p>Use expressions and clauses in your SELECT statement to modify inserted data.</p>
             <div>
               <div class="code_67">
                 <pre class="fragment"><code>
@@ -164,7 +172,7 @@ Id          Value
         <section>
             <h3>SELECT INTO<h3>
             <h3>CREATE TABLE AS … SELECT</h3>
-            <p>You can also use a select statement to create a new table and populate it with data all at once. I often use this to create a temp table with the results of a complex query, which I can then do more work with in later steps.</p>
+            <p>Create target table from the query instead of declaring in advance.</p>
             <div>
               <div class="code_67">
                 <pre class="fragment"><code>
@@ -196,7 +204,7 @@ Id          Value
 
         <section>
             <h3>UNION</h3>
-            <p>UNION lets you combine two queries into a single result set.</p>
+            <p>Combine two separate queries into a single result set.</p>
             <div>
               <div class="code_67">
                 <pre class="fragment"><code>
@@ -218,12 +226,12 @@ Id          Value
                 </code></pre>
               </div>
             </div>
-            <p class="fragment">As you can see, duplicate values are automatically condensed into a single row. Often you don't want this.</p>
+            <p class="fragment">UNION condenses duplicate values into a single row.</p>
         </section>
 
         <section>
             <h3>UNION ALL</h3>
-            <p>If you want to keep all the rows from both sets, use UNION ALL.</p>
+            <p>To keep all the rows from both sets, use UNION ALL.</p>
             <div>
               <div class="code_67">
                 <pre class="fragment"><code>
@@ -249,12 +257,12 @@ Id          Value
                 </code></pre>
               </div>
             </div>
-            <p class="fragment">Note: when UNIONing tables, you need to have the same column listing in both the first and second parts, or you'll get an error.</p>
+            <p class="fragment">Must have the same column signature in all UNIONed queries. Mismatches will error.</p>
         </section>
 
         <section>
-            <h3>SUBQUERIES (using IN)</h3>
-            <p>You can nest queries, too. These are called subqueries. A simple and common subquery selects a single field with the IN operator.</p>
+            <h3>SUBQUERIES using IN</h3>
+            <p class="fragment">First, a reminder of what's in test_b.</p>
             <div>
               <div class="code_67">
                 <pre class="fragment"><code>
@@ -276,6 +284,7 @@ Id          Value
                 </code></pre>
               </div>
             </div>
+            <p class="fragment">The IN operator works with WHERE. Often easier than a join.</p>
             <div>
               <div class="code_67">
                 <pre class="fragment"><code>
@@ -296,6 +305,7 @@ Id          Value
                 </code></pre>
               </div>
             </div>
+            <p class="fragment">IN only works with a single column in the subquery. SELECT * will error.</p>
         </section>
 
         <section>
@@ -319,14 +329,15 @@ Id          Value
                 </code></pre>
               </div>
             </div>
-            <p class="fragment">Subqueries can be a little dangerous. Depending on what you’re doing, you may put a surprisingly heavy load on your query processor--effectively running a new query for every row in your system.</p>
-            <p class="fragment">Usually a simple IN subquery is efficient, similar to a JOIN. NOT IN is more likely to perform poorly and yields surprising results if there are NULLs in the subquery.</p>
-            <p class="fragment">Omitted for time and complexity: EXISTS/NOT EXISTS, and correlated subqueries. Correlated subqueries are very cool! If you work with SQL routinely, look them up.</p>
+            <p class="fragment">NOT IN can be tricky.<br />NULLs in subquery will break results. NOT IN can be expensive.</p>
+            <p class="fragment">IN has fewer gotchas than NOT IN.</p>
+            <p class="fragment">Want more subqueries? EXISTS/NOT EXISTS, correlated subqueries.</p>
         </section>
 
         <section>
             <h3>Setup (part 2)</h3>
-            <p>For the next part we want a numbers table with numbers from 1 to 100. The easiest way to do this varies by platform.</p>
+            <p>Setting up a numbers table from 1 to 100.</p>
+            <p>Varies between platforms.</p>
             <div>
               <div class="code_67">
                 <pre class="fragment"><code>
@@ -383,7 +394,7 @@ n
 
         <section>
             <h3>Derived Tables</h3>
-            <p>When writing a query that uses JOINs, you can use a SELECT statement as if it were a table and join against it. It’s a bit like making a one-off view.</p>
+            <p>Use a SELECT statement as if it were a table and join against it.</p>
             <div>
               <div class="code_67">
                 <pre class="fragment"><code>
@@ -425,7 +436,8 @@ n           even        mod3
 
         <section>
             <h3>CASE statements</h3>
-            <p>CASE statements allow you to put conditional logic into your SQL clauses, using a syntax similar to the switch/case statement you see in various imperative languages. Here’s a FizzBuzz example over the “ints”  table.</p>
+            <p>Put conditional logic into your SQL clauses.</p>
+            <p>Syntax is similar to switch/case in imperative languages.</p>
             <div>
               <div class="code_67">
                 <pre class="fragment"><code>
@@ -469,7 +481,7 @@ n           FizzBuzz
 
         <section>
             <h3>CASE statements (contd)</h3>
-            <p>If you spend any time working with SQL, learn how to use CASE. You can nest CASE expressions . . . </p>
+            <p>You can nest CASE expressions.</p>
             <div>
               <div class="code_67">
                 <pre class="fragment"><code>
@@ -503,7 +515,8 @@ n           FizzBuzz
 
         <section>
             <h3>CASE statements (contd)</h3>
-            <p>. . . you can use CASE expressions with ORDER BY (this can be extremely handy when writing reports) . . .</p>
+            <p>You can use CASE expressions in ORDER BY.</p>
+            <p>Very handy if you write complicated reports.</p>
             <div>
               <div class="code_67">
                 <pre class="fragment"><code>
@@ -544,7 +557,7 @@ n
 
         <section>
             <h3>CASE statements (contd)</h3>
-            <p>. . . you can integrate CASE with aggregations. Again, I like this when writing reports. I commonly need to aggregate the same data a few different ways, and CASE can sometimes keep it all in one query.</p>
+            <p>Combine CASE with aggregation statments. Avoid repeating queries.</p>
             <div>
               <div class="code_67">
                 <pre class="fragment"><code>
